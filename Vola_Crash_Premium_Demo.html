@@ -1,0 +1,836 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Vola Crash — Premium Demo</title>
+<meta name="description" content="Vola Crash, jeu de démonstration à monnaie virtuelle uniquement.">
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&family=Unbounded:wght@500;700&display=swap">
+<style>
+/* Layout: live-bets sidebar on the left; night-sky stage with two independent bet panels on the right. On phones the stage and bet panels come first, the sidebar last. */
+:root {
+  --ground: #09171f;
+  --panel: #0f2430;
+  --panel-2: #153240;
+  --line: #24485a;
+  --ink: #e8f1f5;
+  --ink-dim: #8ba7b5;
+  --gold: #f5b83d;
+  --win: #3fd89a;
+  --loss: #ff6a4d;
+  --display: 'Unbounded', 'Arial Black', system-ui, sans-serif;
+  --body: 'Manrope', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font: 400 15px/1.5 var(--body);
+  font-variant-numeric: tabular-nums;
+  padding-block: 20px 36px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 1180px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+button, input { font: inherit; color: inherit; }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+/* header */
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.brand { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; min-width: 0; }
+.logo { font: 700 22px/1 var(--display); letter-spacing: 0.01em; }
+.logo span { color: var(--gold); }
+.tag { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-dim); border: 1px solid var(--line); padding: 3px 8px; border-radius: 999px; }
+.wallet { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.wallet .lbl { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-dim); display: block; }
+.wallet strong { font: 700 20px/1.1 var(--body); }
+.mini { background: none; border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; font-size: 12px; font-weight: 600; color: var(--ink-dim); cursor: pointer; }
+.mini:hover { color: var(--ink); border-color: var(--ink-dim); }
+
+/* layout */
+.app { display: grid; grid-template-columns: 310px minmax(0, 1fr); gap: 16px; align-items: start; }
+.main { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px; min-width: 0; }
+@media (max-width: 900px) { .app { grid-template-columns: minmax(0, 1fr); } .main { order: 1; } .side { order: 2; } }
+
+/* sidebar */
+.side { display: flex; flex-direction: column; gap: 10px; }
+.tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; background: var(--ground); padding: 4px; border-radius: 8px; }
+.tab { background: none; border: 0; border-radius: 6px; padding: 7px 4px; font-size: 12px; font-weight: 700; color: var(--ink-dim); cursor: pointer; }
+.tab:hover { color: var(--ink); }
+.tab.on { background: var(--panel-2); color: var(--ink); }
+.prev { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px; font-weight: 600; color: var(--ink-dim); }
+.count { font-size: 12px; font-weight: 600; color: var(--ink-dim); }
+.listwrap { max-height: 470px; overflow: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--ground); }
+@media (max-width: 900px) { .listwrap { max-height: 320px; } }
+.tbl { width: 100%; border-collapse: collapse; font-size: 12px; }
+.tbl th { position: sticky; top: 0; background: var(--panel-2); text-align: right; font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-dim); padding: 7px 8px; }
+.tbl td { text-align: right; padding: 7px 8px; border-top: 1px solid rgba(36, 72, 90, 0.5); white-space: nowrap; }
+.tbl th:first-child, .tbl td:first-child { text-align: left; }
+.tbl tr.me td { background: rgba(245, 184, 61, 0.1); }
+.tbl tr.win td { background: rgba(63, 216, 154, 0.1); }
+.tbl tr.win td.m, .tbl tr.win td.g { color: var(--win); font-weight: 700; }
+.tbl tr.lose td { color: var(--ink-dim); }
+.tbl tr.lose.me td.g { color: var(--loss); font-weight: 700; }
+.tbl td.empty { text-align: center; color: var(--ink-dim); padding: 18px 8px; }
+.sim { margin: 0; font-size: 11px; color: var(--ink-dim); }
+
+/* stage */
+.hist { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: thin; }
+.chip { flex: none; font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 999px; background: var(--panel-2); }
+.chip.lo { color: var(--loss); }
+.chip.mid { color: var(--win); }
+.chip.hi { color: var(--gold); }
+.screen { position: relative; aspect-ratio: 16 / 9; min-height: 280px; max-width: 100%; background: var(--ground); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.screen.shake { animation: shake 0.4s linear; }
+.screen canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; pointer-events: none; text-align: center; padding: 0 12px; }
+.mult { font: 700 clamp(2.4rem, 9vw, 4.4rem)/1.05 var(--display); color: var(--ink); text-shadow: 0 2px 28px rgba(0, 0, 0, 0.55); }
+.mult.wait { color: var(--ink); font-size: clamp(1.6rem, 6vw, 2.6rem); }
+.mult.crash { color: var(--loss); }
+.sub { font-size: 13px; font-weight: 700; color: var(--ink); min-height: 20px; text-shadow: 0 1px 12px rgba(0, 0, 0, 0.6); }
+.sub.win { color: var(--win); }
+.bar { height: 4px; background: var(--panel-2); border-radius: 2px; margin-top: 10px; overflow: hidden; }
+.bar i { display: block; height: 100%; width: 0; background: var(--gold); }
+@keyframes shake { 0%, 100% { transform: translate(0, 0); } 15% { transform: translate(-6px, 3px); } 35% { transform: translate(6px, -3px); } 55% { transform: translate(-4px, -2px); } 75% { transform: translate(3px, 2px); } }
+@media (prefers-reduced-motion: reduce) { .screen.shake { animation: none; } }
+
+/* bet panels */
+.bets { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 700px) { .bets { grid-template-columns: minmax(0, 1fr); } }
+.bp { display: flex; flex-direction: column; gap: 10px; }
+.bp-title { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-dim); }
+.bp-row { display: grid; grid-template-columns: minmax(0, 1fr) 132px; gap: 10px; align-items: stretch; }
+@media (max-width: 480px) { .bp-row { grid-template-columns: minmax(0, 1fr); } }
+.bp-left { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.betrow { display: grid; grid-template-columns: 38px minmax(0, 1fr) 38px; gap: 6px; }
+.betrow button, .quick button { background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; font-weight: 700; cursor: pointer; }
+.betrow button { height: 42px; font-size: 18px; }
+.betrow button:hover, .quick button:hover { border-color: var(--ink-dim); }
+input[type="text"] { width: 100%; height: 42px; background: var(--ground); border: 1px solid var(--line); border-radius: 8px; padding: 0 8px; text-align: center; font-weight: 700; font-size: 16px; }
+.quick { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.quick button { height: 32px; font-size: 12px; color: var(--ink-dim); padding: 0 2px; }
+.auto { display: grid; grid-template-columns: minmax(0, 1fr) 96px; gap: 8px; align-items: center; }
+.auto-label { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-dim); }
+.auto-label input { width: 18px; height: 18px; accent-color: var(--gold); }
+.auto input[type="text"] { height: 36px; font-size: 14px; }
+.go { min-height: 54px; border: 0; border-radius: 10px; background: var(--gold); color: #1b1300; font: 700 15px/1.2 var(--body); cursor: pointer; padding: 6px 10px; }
+.go:hover:not(:disabled) { filter: brightness(1.08); }
+.go:disabled { background: var(--panel-2); color: var(--ink-dim); cursor: not-allowed; }
+.go.cancel { background: transparent; color: var(--ink); border: 1px solid var(--ink-dim); }
+.go.wait { background: var(--panel-2); color: var(--gold); border: 1px solid var(--gold); }
+.go.cash { background: var(--win); color: #04251a; font-size: 16px; }
+.result { min-height: 20px; font-size: 13px; font-weight: 600; color: var(--ink-dim); }
+.result.win { color: var(--win); }
+.result.loss { color: var(--loss); }
+.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0; }
+.stats dt { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-dim); }
+.stats dd { margin: 2px 0 0; font-weight: 700; font-size: 15px; overflow-wrap: anywhere; }
+.stats dd.pos { color: var(--win); }
+.stats dd.neg { color: var(--loss); }
+
+/* footer */
+.foot { display: flex; flex-wrap: wrap; gap: 6px 20px; font-size: 13px; color: var(--ink-dim); }
+.foot b { color: var(--ink); font-weight: 700; }
+.note { font-size: 13px; color: var(--ink-dim); max-width: 70ch; margin: 0; }
+</style>
+
+<style id="premium-refresh">
+/* Premium refresh: brighter neon accents, richer background and softer cards. */
+:root {
+  --ground: #070b18; --panel: #10172b; --panel-2: #192541; --line: #2b3d64;
+  --ink: #f4f7ff; --ink-dim: #9aa9c8; --gold: #ffd166; --win: #4ce6b1; --loss: #ff6685;
+}
+body { background: radial-gradient(ellipse at 50% -15%, #23366b 0%, #0b1023 43%, #070b18 78%); }
+.wrap { gap: 18px; }
+.panel { border-radius: 16px; border-color: rgba(100,137,205,.30); box-shadow: 0 12px 36px rgba(0,0,0,.18); }
+.logo { letter-spacing: -.04em; text-shadow: 0 0 24px rgba(255,209,102,.12); }
+.logo span { color: var(--gold); }
+.tag { border-color: rgba(76,230,177,.35); color: #7df0c7; background: rgba(76,230,177,.07); }
+.screen { border-radius: 14px; border-color: rgba(100,137,205,.35); background: radial-gradient(ellipse at 50% 100%, #17264d 0%, #090e20 66%); }
+.chip { border: 1px solid rgba(100,137,205,.2); }
+.go { background: linear-gradient(135deg, #ffe08a, #ffbd45); box-shadow: 0 5px 18px rgba(255,189,69,.12); }
+.go.cash { background: linear-gradient(135deg, #70f3c5, #32d9a0); }
+.go:disabled { box-shadow: none; }
+.betrow button, .quick button, .mini, input[type="text"] { border-radius: 10px; }
+.betrow button:hover, .quick button:hover { background: #213253; }
+.listwrap { border-radius: 10px; }
+.foot { padding: 12px 14px; border: 1px solid rgba(100,137,205,.22); border-radius: 12px; background: rgba(16,23,43,.62); }
+.note { line-height: 1.65; }
+@media (max-width: 600px) { body { padding-top: 12px; } .logo { font-size: 21px; } .panel { padding: 12px; } .screen { min-height: 235px; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <div class="logo">Vola<span>Crash</span></div>
+      <span class="tag">Démo · monnaie virtuelle</span>
+    </div>
+    <div class="wallet">
+      <div><span class="lbl">Solde</span><strong id="bal">10 000 Ar</strong></div>
+      <button class="mini" id="snd" type="button" aria-pressed="true">Son activé</button>
+      <button class="mini" id="reset" type="button">Remettre à 10 000</button>
+    </div>
+  </header>
+
+  <div class="app">
+    <aside class="panel side" aria-label="Mises en direct">
+      <div class="tabs" role="group" aria-label="Affichage">
+        <button class="tab on" type="button" data-tab="all">Général</button>
+        <button class="tab" type="button" data-tab="mine">Mes mises</button>
+        <button class="tab" type="button" data-tab="top">Classement</button>
+      </div>
+      <div class="prev"><span>Manche précédente</span><span class="chip" id="prevChip">—</span></div>
+      <div class="count" id="count">Toutes les mises : 0</div>
+      <div class="listwrap"><table class="tbl"><thead id="thead"></thead><tbody id="tbody"></tbody></table></div>
+      <p class="sim">Les autres joueurs sont simulés pour la démo.</p>
+    </aside>
+
+    <div class="main">
+      <section class="panel" aria-label="Manche en cours">
+        <div class="hist" id="hist" aria-label="Dernières manches"></div>
+        <div class="screen" id="screen">
+          <canvas id="cv"></canvas>
+          <div class="overlay">
+            <div class="mult wait" id="mult">Décollage 6,0 s</div>
+            <div class="sub" id="sub">Place ta mise avant le départ</div>
+          </div>
+        </div>
+        <div class="bar"><i id="barfill"></i></div>
+      </section>
+
+      <div class="bets" id="bets"></div>
+
+      <section class="panel" aria-label="Statistiques">
+        <dl class="stats">
+          <div><dt>Mises jouées</dt><dd id="stRounds">0</dd></div>
+          <div><dt>Gain net</dt><dd id="stNet">0 Ar</dd></div>
+          <div><dt>Meilleur</dt><dd id="stBest">—</dd></div>
+        </dl>
+      </section>
+    </div>
+  </div>
+
+  <div class="foot">
+    <span>Retour au joueur <b>97 %</b></span>
+    <span>Mise de <b>100</b> à <b>100 000 Ar</b></span>
+    <span>Multiplicateur maximum <b>×1 000</b></span>
+  </div>
+  <p class="note">DÉMO UNIQUEMENT — aucun dépôt, retrait ou paiement réel. Le tirage se fait dans ton navigateur avec de la monnaie virtuelle. Pour un opérateur, le tirage, les mises et les gains passent par un serveur, avec un générateur aléatoire certifié.</p>
+</div>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var K = 0.12, WAIT = 6000, PAUSE = 2800, MIN = 100, MAX = 100000, START = 10000, HIST_MAX = 14;
+
+  var cs = getComputedStyle(document.documentElement);
+  var C = {};
+  ['ground', 'panel', 'panel-2', 'line', 'ink', 'ink-dim', 'gold', 'win', 'loss'].forEach(function (n) {
+    C[n] = cs.getPropertyValue('--' + n).trim();
+  });
+
+  var nf = new Intl.NumberFormat('fr-FR');
+  function fmtAr(n) { return nf.format(Math.floor(n)) + ' Ar'; }
+  function fmtX(m) { return '×' + m.toFixed(2).replace('.', ','); }
+  function rnd(a, b) { return a + Math.random() * (b - a); }
+
+  function genCrash() {
+    var a = new Uint32Array(1);
+    crypto.getRandomValues(a);
+    var r = a[0] / 4294967296;
+    var v = Math.floor(100 * 0.97 / (1 - r)) / 100;
+    return Math.min(1000, Math.max(1, v));
+  }
+
+  var balance = START;
+  try {
+    var saved = localStorage.getItem('volacrash.balance');
+    if (saved !== null && !isNaN(+saved)) balance = Math.max(0, Math.floor(+saved));
+  } catch (e) {}
+  function save() { try { localStorage.setItem('volacrash.balance', String(balance)); } catch (e) {} }
+
+  var stats = { rounds: 0, net: 0, best: 0 };
+  var history = [];
+  for (var hi = 0; hi < HIST_MAX; hi++) history.push(genCrash());
+
+  var phase = 'wait', phaseStart = performance.now(), runStart = 0, runT = 0, lastNow = performance.now();
+  var crashPoint = genCrash(), mult = 1;
+  var bets = [null, null], nextBets = [null, null], lastBtn = ['', ''], myLog = [];
+  var bots = [], botsDirty = true, lastTable = 0, tab = 'all', lastBeep = -1;
+
+  /* ---------- bet panels ---------- */
+  function panelHTML(i) {
+    var d = i === 0 ? '1000' : '500';
+    var q = [500, 1000, 5000, 10000].map(function (v) {
+      return '<button type="button" data-i="' + i + '" data-v="' + v + '">' + nf.format(v) + '</button>';
+    }).join('');
+    return '<section class="panel bp" aria-label="Pari ' + (i + 1) + '">' +
+      '<span class="bp-title">Pari ' + (i + 1) + '</span>' +
+      '<div class="bp-row"><div class="bp-left">' +
+      '<div class="betrow"><button type="button" class="step" data-i="' + i + '" data-d="-1" aria-label="Diminuer la mise">−</button>' +
+      '<input type="text" id="bet' + i + '" inputmode="numeric" value="' + d + '" autocomplete="off" aria-label="Mise du pari ' + (i + 1) + '">' +
+      '<button type="button" class="step" data-i="' + i + '" data-d="1" aria-label="Augmenter la mise">+</button></div>' +
+      '<div class="quick">' + q + '</div></div>' +
+      '<button class="go" id="go' + i + '" type="button">Miser</button></div>' +
+      '<div class="auto"><label class="auto-label" for="autoOn' + i + '"><input type="checkbox" id="autoOn' + i + '"> Encaisser auto à</label>' +
+      '<input type="text" id="auto' + i + '" inputmode="decimal" value="2,00" aria-label="Multiplicateur d\'encaissement automatique du pari ' + (i + 1) + '" autocomplete="off"></div>' +
+      '<div class="result" id="res' + i + '" aria-live="polite">Place ta mise.</div></section>';
+  }
+  $('bets').innerHTML = panelHTML(0) + panelHTML(1);
+
+  var el = {
+    bal: $('bal'), hist: $('hist'), mult: $('mult'), sub: $('sub'), bar: $('barfill'),
+    rounds: $('stRounds'), net: $('stNet'), best: $('stBest'), cv: $('cv'), screen: $('screen'), snd: $('snd'),
+    prev: $('prevChip'), count: $('count'), thead: $('thead'), tbody: $('tbody'),
+    bet: [$('bet0'), $('bet1')], auto: [$('auto0'), $('auto1')], autoOn: [$('autoOn0'), $('autoOn1')],
+    go: [$('go0'), $('go1')], res: [$('res0'), $('res1')]
+  };
+  var ctx = el.cv.getContext('2d');
+  var W = 0, H = 0;
+
+  function resize() {
+    var dpr = window.devicePixelRatio || 1;
+    W = el.screen.clientWidth; H = el.screen.clientHeight;
+    el.cv.width = Math.round(W * dpr); el.cv.height = Math.round(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  if (window.ResizeObserver) new ResizeObserver(resize).observe(el.screen);
+  window.addEventListener('resize', resize);
+  resize();
+
+  /* ---------- sound (starts after the first tap) ---------- */
+  var audio = { ctx: null, on: true, eng: null };
+  function ensureAudio() {
+    if (!audio.on) return;
+    if (!audio.ctx) {
+      try { audio.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { audio.ctx = null; }
+    }
+    if (audio.ctx && audio.ctx.state === 'suspended') { try { audio.ctx.resume(); } catch (e) {} }
+  }
+  function engineStart() {
+    if (!audio.ctx || !audio.on || audio.eng) return;
+    var c = audio.ctx, o = c.createOscillator(), f = c.createBiquadFilter(), g = c.createGain();
+    o.type = 'sawtooth'; o.frequency.value = 70;
+    f.type = 'lowpass'; f.frequency.value = 380;
+    g.gain.value = 0;
+    o.connect(f); f.connect(g); g.connect(c.destination);
+    o.start(); g.gain.setTargetAtTime(0.08, c.currentTime, 0.3);
+    audio.eng = { o: o, f: f, g: g };
+  }
+  function engineSet(m) {
+    if (!audio.eng) return;
+    var c = audio.ctx, x = Math.min(m, 20);
+    audio.eng.o.frequency.setTargetAtTime(70 + x * 9, c.currentTime, 0.1);
+    audio.eng.f.frequency.setTargetAtTime(380 + x * 40, c.currentTime, 0.1);
+  }
+  function engineStop() {
+    if (!audio.eng) return;
+    var c = audio.ctx, e = audio.eng;
+    audio.eng = null;
+    try { e.g.gain.setTargetAtTime(0, c.currentTime, 0.06); e.o.stop(c.currentTime + 0.4); } catch (er) {}
+  }
+  function boom() {
+    if (!audio.ctx || !audio.on) return;
+    var c = audio.ctx, n = Math.floor(c.sampleRate * 0.9), buf = c.createBuffer(1, n, c.sampleRate), d = buf.getChannelData(0);
+    for (var i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 2.2);
+    var s = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
+    s.buffer = buf; f.type = 'lowpass'; f.frequency.value = 700; g.gain.value = 0.35;
+    s.connect(f); f.connect(g); g.connect(c.destination); s.start();
+  }
+  function chime() {
+    if (!audio.ctx || !audio.on) return;
+    var c = audio.ctx;
+    [660, 990].forEach(function (fr, i) {
+      var o = c.createOscillator(), g = c.createGain(), t = c.currentTime + i * 0.09;
+      o.type = 'sine'; o.frequency.value = fr;
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.12, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.35);
+      o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + 0.4);
+    });
+  }
+  function beep(fr, dur, vol) {
+    if (!audio.ctx || !audio.on) return;
+    var c = audio.ctx, o = c.createOscillator(), g = c.createGain(), t = c.currentTime;
+    o.type = 'square'; o.frequency.value = fr;
+    g.gain.setValueAtTime(vol || 0.05, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + dur + 0.02);
+  }
+  function whoosh() {
+    if (!audio.ctx || !audio.on) return;
+    var c = audio.ctx, n = Math.floor(c.sampleRate * 0.9), buf = c.createBuffer(1, n, c.sampleRate), d = buf.getChannelData(0);
+    for (var i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.sin(Math.PI * i / n);
+    var s = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain(), t = c.currentTime;
+    s.buffer = buf; f.type = 'bandpass'; f.Q.value = 0.8;
+    f.frequency.setValueAtTime(300, t); f.frequency.exponentialRampToValueAtTime(2400, t + 0.85);
+    g.gain.value = 0.25;
+    s.connect(f); f.connect(g); g.connect(c.destination); s.start(t);
+  }
+  document.addEventListener('pointerdown', ensureAudio);
+  el.snd.addEventListener('click', function () {
+    audio.on = !audio.on;
+    el.snd.textContent = audio.on ? 'Son activé' : 'Son coupé';
+    el.snd.setAttribute('aria-pressed', audio.on ? 'true' : 'false');
+    if (!audio.on) engineStop(); else { ensureAudio(); if (phase === 'run') engineStart(); }
+  });
+
+  /* ---------- helpers ---------- */
+  function readBet(i) {
+    var n = parseInt(String(el.bet[i].value).replace(/\D/g, ''), 10);
+    if (isNaN(n)) n = MIN;
+    return Math.min(MAX, Math.max(MIN, n));
+  }
+  function readAuto(i) {
+    var v = parseFloat(String(el.auto[i].value).replace(',', '.'));
+    if (isNaN(v)) v = 2;
+    return Math.min(1000, Math.max(1.01, Math.floor(v * 100) / 100));
+  }
+  function chipClass(v) { return 'chip ' + (v < 2 ? 'lo' : v < 10 ? 'mid' : 'hi'); }
+  function renderBalance() { el.bal.textContent = fmtAr(balance); }
+  function renderStats() {
+    el.rounds.textContent = String(stats.rounds);
+    el.net.textContent = (stats.net > 0 ? '+' : stats.net < 0 ? '−' : '') + fmtAr(Math.abs(stats.net));
+    el.net.className = stats.net > 0 ? 'pos' : stats.net < 0 ? 'neg' : '';
+    el.best.textContent = stats.best > 0 ? fmtX(stats.best) : '—';
+  }
+  function renderHist() {
+    el.hist.innerHTML = '';
+    history.forEach(function (v) {
+      var s = document.createElement('span');
+      s.className = chipClass(v);
+      s.textContent = fmtX(v);
+      el.hist.appendChild(s);
+    });
+    el.prev.className = chipClass(history[0]);
+    el.prev.textContent = fmtX(history[0]);
+  }
+  function showResult(i, kind, text) { el.res[i].className = 'result ' + kind; el.res[i].textContent = text; }
+
+  function renderButton(i) {
+    var b = el.go[i], cls = 'go', text, dis = false, bt = bets[i], nb = nextBets[i];
+    var amt = readBet(i);
+    function queueState() {
+      if (nb) { cls += ' wait'; text = 'Annuler · prochaine manche (' + fmtAr(nb.amount) + ')'; }
+      else if (amt > balance) { text = 'Solde insuffisant'; dis = true; }
+      else { text = 'Miser pour la prochaine manche'; }
+    }
+    if (phase === 'wait') {
+      if (bt) { cls += ' cancel'; text = 'Annuler la mise (' + fmtAr(bt.amount) + ')'; }
+      else if (amt > balance) { text = 'Solde insuffisant'; dis = true; }
+      else { text = 'Miser ' + fmtAr(amt); }
+    } else if (phase === 'run') {
+      if (bt && !bt.cashed) { cls += ' cash'; text = 'Encaisser ' + fmtAr(bt.amount * mult); }
+      else if (bt && bt.cashed) { text = 'Encaissé à ' + fmtX(bt.at); dis = true; }
+      else queueState();
+    } else {
+      queueState();
+    }
+    var key = cls + '|' + text + '|' + dis;
+    if (key === lastBtn[i]) return;
+    lastBtn[i] = key;
+    b.className = cls; b.textContent = text; b.disabled = dis;
+  }
+
+  /* ---------- live bets (simulated players) ---------- */
+  var BET_STEPS = [100, 200, 300, 500, 1000, 2000, 3000, 5000, 10000, 20000, 50000];
+  function botName() {
+    var L = 'ABCDEFGHJKLMNPRSTUVWXYZ';
+    return L.charAt(Math.floor(Math.random() * L.length)) + '***' + String(Math.floor(rnd(10, 99)));
+  }
+  function genBots() {
+    var n = Math.floor(rnd(16, 30));
+    bots = [];
+    for (var i = 0; i < n; i++) {
+      var bet = BET_STEPS[Math.floor(Math.pow(Math.random(), 1.6) * BET_STEPS.length)];
+      var target = Math.random() < 0.15 ? 1 + rnd(0.05, 0.4) : Math.floor(100 * 0.97 / (1 - Math.random())) / 100;
+      target = Math.min(150, Math.max(1.05, Math.floor(target * 100) / 100));
+      bots.push({ name: botName(), bet: bet, target: target, status: 'play', at: 0 });
+    }
+    bots.sort(function (a, b) { return b.bet - a.bet; });
+  }
+
+  function renderTable() {
+    var head = '', rows = '', total = bots.length + (bets[0] ? 1 : 0) + (bets[1] ? 1 : 0);
+    el.count.textContent = tab === 'all' ? 'Toutes les mises : ' + total : (tab === 'mine' ? 'Tes mises de cette session' : 'Plus gros multiplicateurs récents');
+    if (tab === 'all') {
+      head = '<tr><th>Joueur</th><th>Mise</th><th>Mult.</th><th>Gain</th></tr>';
+      var list = [];
+      bets.forEach(function (b, i) {
+        if (!b) return;
+        var st = b.cashed ? 'win' : (phase === 'crashed' ? 'lose' : 'play');
+        list.push({ name: 'Toi · Pari ' + (i + 1), bet: b.amount, status: st, at: b.at, me: true });
+      });
+      list = list.concat(bots);
+      list.forEach(function (r) {
+        var cls = (r.me ? 'me ' : '') + (r.status === 'win' ? 'win' : r.status === 'lose' ? 'lose' : '');
+        rows += '<tr class="' + cls + '"><td>' + r.name + '</td><td>' + nf.format(r.bet) + '</td><td class="m">' +
+          (r.status === 'win' ? fmtX(r.at) : '—') + '</td><td class="g">' +
+          (r.status === 'win' ? nf.format(Math.floor(r.bet * r.at)) : (r.me && r.status === 'lose' ? '−' + nf.format(r.bet) : '—')) + '</td></tr>';
+      });
+    } else if (tab === 'mine') {
+      head = '<tr><th>Pari</th><th>Mise</th><th>Mult.</th><th>Gain</th></tr>';
+      if (!myLog.length) rows = '<tr><td class="empty" colspan="4">Aucune mise pour le moment.</td></tr>';
+      myLog.slice(0, 40).forEach(function (r) {
+        rows += '<tr class="' + (r.win > 0 ? 'win' : 'lose me') + '"><td>Pari ' + r.pari + '</td><td>' + nf.format(r.amount) + '</td><td class="m">' +
+          (r.win > 0 ? fmtX(r.at) : '—') + '</td><td class="g">' + (r.win > 0 ? '+' + nf.format(r.win) : '−' + nf.format(r.amount)) + '</td></tr>';
+      });
+    } else {
+      head = '<tr><th>Rang</th><th colspan="3">Multiplicateur</th></tr>';
+      var top = history.slice().sort(function (a, b) { return b - a; }).slice(0, 8);
+      top.forEach(function (v, i) {
+        rows += '<tr><td>#' + (i + 1) + '</td><td colspan="3" style="color:' + (v < 2 ? C.loss : v < 10 ? C.win : C.gold) + ';font-weight:700">' + fmtX(v) + '</td></tr>';
+      });
+    }
+    el.thead.innerHTML = head; el.tbody.innerHTML = rows;
+  }
+  document.querySelectorAll('.tab').forEach(function (b) {
+    b.addEventListener('click', function () {
+      tab = b.getAttribute('data-tab');
+      document.querySelectorAll('.tab').forEach(function (x) { x.classList.toggle('on', x === b); });
+      renderTable();
+    });
+  });
+
+  /* ---------- scenery and effects ---------- */
+  var stars = [], clouds = [], fx = [], flash = 0, emitAcc = 0, lastPlane = { x: 0, y: 0, ang: 0, size: 50 };
+  for (var si = 0; si < 36; si++) stars.push({ x: Math.random(), y: Math.random() * 0.7, r: rnd(0.5, 1.4), p: rnd(0, 6) });
+  for (var ci = 0; ci < 11; ci++) clouds.push({ x: rnd(0, 1.2), y: rnd(0.08, 0.82), s: rnd(0.7, 1.7), a: rnd(0.16, 0.32) });
+
+  function spawnExplosion(x, y) {
+    var i;
+    for (i = 0; i < 46; i++) { var a = rnd(0, 6.283), sp = rnd(60, 260); fx.push({ t: 'fire', x: x, y: y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: rnd(0.5, 1.1), max: 1.1, r: rnd(4, 12) }); }
+    for (i = 0; i < 24; i++) { var b = rnd(0, 6.283), sq = rnd(20, 90); fx.push({ t: 'smoke', x: x, y: y, vx: Math.cos(b) * sq, vy: Math.sin(b) * sq - 20, life: rnd(1, 1.8), max: 1.8, r: rnd(8, 20) }); }
+    for (i = 0; i < 14; i++) { var c = rnd(0, 6.283), sd = rnd(100, 300); fx.push({ t: 'debris', x: x, y: y, vx: Math.cos(c) * sd, vy: Math.sin(c) * sd - 80, life: rnd(0.8, 1.4), max: 1.4, r: rnd(1.5, 3.5), rot: rnd(0, 6) }); }
+    flash = 0.35;
+  }
+
+  function drawJet(x, y, ang, size, gearDown, now) {
+    ctx.save();
+    ctx.translate(x, y); ctx.rotate(ang); ctx.scale(size / 80, size / 80);
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    ctx.fillStyle = '#9db3bf';
+    ctx.beginPath(); ctx.moveTo(-42, -4); ctx.lineTo(-62, 3); ctx.lineTo(-53, 3); ctx.lineTo(-34, -2); ctx.closePath(); ctx.fill();
+    if (gearDown) {
+      ctx.strokeStyle = '#a9bcc6'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(0, 8); ctx.lineTo(-1, 17); ctx.moveTo(36, 8); ctx.lineTo(36, 17); ctx.stroke();
+      ctx.fillStyle = '#10222d';
+      ctx.beginPath(); ctx.arc(-3, 19.5, 3.2, 0, 6.283); ctx.arc(3, 19.5, 3.2, 0, 6.283); ctx.arc(36, 19.5, 2.8, 0, 6.283); ctx.fill();
+    }
+    ctx.fillStyle = '#18475c';
+    ctx.beginPath(); ctx.moveTo(-24, -9); ctx.lineTo(-46, -35); ctx.lineTo(-55, -35); ctx.lineTo(-52, -7); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = C.gold;
+    ctx.beginPath(); ctx.moveTo(-31, -13); ctx.lineTo(-39, -25); ctx.lineTo(-45, -25); ctx.lineTo(-40, -11); ctx.closePath(); ctx.fill();
+    var fg = ctx.createLinearGradient(0, -9, 0, 8);
+    fg.addColorStop(0, '#ffffff'); fg.addColorStop(0.6, '#eef3f6'); fg.addColorStop(1, '#a9bcc6');
+    ctx.fillStyle = fg;
+    ctx.beginPath();
+    ctx.moveTo(50, -1); ctx.quadraticCurveTo(48, -8, 36, -9); ctx.lineTo(-24, -9);
+    ctx.quadraticCurveTo(-44, -9, -54, -6); ctx.lineTo(-54, -3); ctx.quadraticCurveTo(-42, 3, -26, 8);
+    ctx.lineTo(32, 8); ctx.quadraticCurveTo(48, 7, 50, -1); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = C.gold; ctx.lineWidth = 1.6;
+    ctx.beginPath(); ctx.moveTo(-40, 3.5); ctx.lineTo(44, 3); ctx.stroke();
+    ctx.fillStyle = '#1b4a63';
+    ctx.beginPath(); ctx.moveTo(39, -8); ctx.lineTo(45, -6); ctx.lineTo(43, -3); ctx.lineTo(38, -3); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#2d5c75';
+    for (var wx = -32; wx <= 28; wx += 4.2) ctx.fillRect(wx, -5.2, 1.9, 2.4);
+    ctx.fillStyle = '#dfe8ee';
+    ctx.beginPath(); ctx.moveTo(12, 3); ctx.lineTo(-14, 21); ctx.lineTo(-27, 21); ctx.lineTo(-5, 3); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#b9c9d2';
+    ctx.beginPath(); ctx.moveTo(-5, 3); ctx.lineTo(-27, 21); ctx.lineTo(-24, 21); ctx.lineTo(-8, 3); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = C.gold;
+    ctx.beginPath(); ctx.moveTo(-27, 21); ctx.lineTo(-25, 14); ctx.lineTo(-21, 21); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#c7d4dc'; ctx.fillRect(11, 3, 8, 5);
+    var eg = ctx.createLinearGradient(0, 8, 0, 18);
+    eg.addColorStop(0, '#ffd067'); eg.addColorStop(1, '#d99a1f');
+    ctx.fillStyle = eg;
+    ctx.beginPath(); ctx.moveTo(8, 8); ctx.lineTo(24, 8); ctx.quadraticCurveTo(29, 13, 24, 18); ctx.lineTo(8, 18); ctx.quadraticCurveTo(3, 13, 8, 8); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#10222d'; ctx.beginPath(); ctx.ellipse(25.5, 13, 1.8, 4.2, 0, 0, 6.283); ctx.fill();
+    if (Math.floor(now / 450) % 2 === 0) {
+      ctx.fillStyle = '#ff5a4a'; ctx.beginPath(); ctx.arc(-53, -34, 1.6, 0, 6.283); ctx.fill();
+      ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(-25, 20, 1.5, 0, 6.283); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function draw(dt, now) {
+    ctx.clearRect(0, 0, W, H);
+    var sky = ctx.createLinearGradient(0, 0, 0, H);
+    sky.addColorStop(0, C.ground); sky.addColorStop(1, '#0f3347');
+    ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
+    var glow = ctx.createRadialGradient(W * 0.08, H, 0, W * 0.08, H, W * 0.75);
+    glow.addColorStop(0, 'rgba(245,184,61,0.18)'); glow.addColorStop(1, 'rgba(245,184,61,0)');
+    ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
+
+    stars.forEach(function (s) {
+      ctx.globalAlpha = 0.25 + 0.2 * Math.sin(now / 700 + s.p);
+      ctx.fillStyle = C.ink; ctx.beginPath(); ctx.arc(s.x * W, s.y * H, s.r, 0, 6.283); ctx.fill();
+    });
+
+    var t = phase === 'wait' ? 0 : runT;
+    var m = phase === 'wait' ? 1 : (phase === 'crashed' ? crashPoint : Math.exp(K * runT));
+    var speed = phase === 'run' ? 0.03 + 0.015 * Math.min(m, 12) : (phase === 'wait' ? 0.008 : 0);
+    ctx.globalAlpha = 1;
+    clouds.forEach(function (c) {
+      c.x -= dt * speed * (0.5 + c.s);
+      if (c.x < -0.25) { c.x = 1.25; c.y = rnd(0.08, 0.82); }
+      var cx = c.x * W, cy = c.y * H, r = 26 * c.s;
+      [[0, 0, 1], [1.2, 0.25, 0.8], [-1.2, 0.3, 0.75], [0.3, -0.5, 0.85], [2.2, 0.45, 0.55], [-2.1, 0.5, 0.5]].forEach(function (q) {
+        var qx = cx + q[0] * r, qy = cy + q[1] * r, qr = r * q[2] * 1.3;
+        var cg = ctx.createRadialGradient(qx, qy, 0, qx, qy, qr);
+        cg.addColorStop(0, 'rgba(240,248,252,' + c.a + ')'); cg.addColorStop(1, 'rgba(240,248,252,0)');
+        ctx.fillStyle = cg; ctx.beginPath(); ctx.arc(qx, qy, qr, 0, 6.283); ctx.fill();
+      });
+    });
+    ctx.globalAlpha = 1;
+
+    var pl = 46, pr = 14, pt = 14, pb = 26, pw = W - pl - pr, ph = H - pt - pb;
+    var tMax = Math.max(6, t * 1.2), yMax = Math.max(2, m * 1.3);
+    var X = function (tt) { return pl + tt / tMax * pw; };
+    var Y = function (v) { return pt + ph - (v - 1) / (yMax - 1) * ph; };
+
+    ctx.font = '600 11px Manrope, system-ui, sans-serif';
+    ctx.lineWidth = 1; ctx.textBaseline = 'middle'; ctx.textAlign = 'right';
+    var lastY = Y(1) + 99;
+    [1, 1.5, 2, 3, 5, 10, 20, 50, 100, 200, 500, 1000].forEach(function (v) {
+      if (v >= yMax * 0.98) return;
+      var y = Y(v);
+      if (v !== 1 && Math.abs(lastY - y) < 34) return;
+      lastY = y;
+      ctx.strokeStyle = v === 1 ? C.line : 'rgba(36,72,90,0.45)';
+      ctx.beginPath(); ctx.moveTo(pl, Math.round(y) + 0.5); ctx.lineTo(W - pr, Math.round(y) + 0.5); ctx.stroke();
+      ctx.fillStyle = C['ink-dim'];
+      ctx.fillText('×' + v, pl - 8, y);
+    });
+    var step = tMax <= 8 ? 1 : tMax <= 16 ? 2 : tMax <= 40 ? 5 : 10;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    for (var s = 0; s <= tMax; s += step) {
+      ctx.fillStyle = C['ink-dim'];
+      ctx.fillText(s + ' s', X(s), H - pb + 8);
+    }
+
+    var size = Math.max(76, Math.min(128, W * 0.18));
+    var ex = X(t), ey = Y(m), ang = 0;
+    var col = phase === 'crashed' ? C.loss : C.gold;
+
+    if (phase !== 'wait') {
+      var dxPx = pw / tMax, dyPx = K * m * ph / (yMax - 1);
+      ang = -Math.min(1.1, Math.atan2(dyPx, dxPx));
+      var N = 90;
+      ctx.beginPath();
+      for (var i = 0; i <= N; i++) {
+        var tt = t * i / N, v = Math.exp(K * tt);
+        if (i === 0) ctx.moveTo(X(tt), Y(v)); else ctx.lineTo(X(tt), Y(v));
+      }
+      var lg = ctx.createLinearGradient(X(0), 0, Math.max(ex, X(0) + 1), 0);
+      lg.addColorStop(0, col + '00'); lg.addColorStop(1, col + 'ff');
+      ctx.lineJoin = 'round'; ctx.lineWidth = 3; ctx.strokeStyle = lg; ctx.stroke();
+      ctx.lineTo(ex, Y(1)); ctx.lineTo(X(0), Y(1)); ctx.closePath();
+      var g = ctx.createLinearGradient(0, pt, 0, pt + ph);
+      g.addColorStop(0, col + '38'); g.addColorStop(1, col + '00');
+      ctx.fillStyle = g; ctx.fill();
+
+      bets.forEach(function (b) {
+        if (b && b.cashed) {
+          var cx = X(Math.log(b.at) / K), cy = Y(b.at);
+          ctx.beginPath(); ctx.arc(cx, cy, 6, 0, 6.283);
+          ctx.fillStyle = C.win; ctx.fill();
+          ctx.lineWidth = 2; ctx.strokeStyle = C.ground; ctx.stroke();
+        }
+      });
+    }
+
+    var px = ex, py = ey - (phase === 'wait' ? size * 0.32 : 0) + Math.sin(now / 180) * 1.2;
+    var tailX = px - Math.cos(ang) * size * 0.66, tailY = py - Math.sin(ang) * size * 0.66;
+    if (phase !== 'crashed') lastPlane = { x: px, y: py, ang: ang, size: size };
+
+    if (phase === 'run' || phase === 'wait') {
+      emitAcc += dt * (phase === 'run' ? 70 : 12);
+      while (emitAcc >= 1) {
+        emitAcc -= 1;
+        if (fx.length < 220) fx.push({ t: 'puff', x: tailX + rnd(-2, 2), y: tailY + size * 0.12 + rnd(-2, 2), vx: -rnd(20, 50), vy: rnd(-8, 8), life: rnd(0.6, 1), max: 1, r: rnd(2, 4) });
+      }
+    }
+
+    if (phase !== 'crashed') drawJet(px, py, ang, size, phase === 'wait' || m < 1.3, now);
+
+    for (var k = fx.length - 1; k >= 0; k--) {
+      var p = fx[k];
+      p.life -= dt;
+      if (p.life <= 0) { fx.splice(k, 1); continue; }
+      p.x += p.vx * dt; p.y += p.vy * dt;
+      var f = p.life / p.max;
+      if (p.t === 'puff') {
+        ctx.globalAlpha = f * 0.4; ctx.fillStyle = '#e8f1f5';
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r + (1 - f) * 7, 0, 6.283); ctx.fill();
+      } else if (p.t === 'smoke') {
+        p.vy -= 10 * dt;
+        ctx.globalAlpha = f * 0.45; ctx.fillStyle = '#4a5a64';
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r + (1 - f) * 14, 0, 6.283); ctx.fill();
+      } else if (p.t === 'fire') {
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.globalAlpha = Math.min(1, f * 1.2);
+        ctx.fillStyle = f > 0.6 ? C.gold : (f > 0.3 ? C.loss : '#7a3a2a');
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r * (0.5 + f), 0, 6.283); ctx.fill();
+        ctx.globalCompositeOperation = 'source-over';
+      } else {
+        p.vy += 320 * dt; p.rot += dt * 8;
+        ctx.globalAlpha = Math.min(1, f * 1.5); ctx.fillStyle = '#cfe3ee';
+        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.fillRect(-p.r, -p.r * 0.5, p.r * 2, p.r); ctx.restore();
+      }
+    }
+    ctx.globalAlpha = 1;
+
+    if (flash > 0) {
+      ctx.fillStyle = 'rgba(255,225,190,' + flash + ')'; ctx.fillRect(0, 0, W, H);
+      flash = Math.max(0, flash - dt * 1.6);
+    }
+  }
+
+  /* ---------- game flow ---------- */
+  function placedText(b) { return 'Mise de ' + fmtAr(b.amount) + ' placée' + (b.auto ? ', encaissement auto à ' + fmtX(b.auto) : '') + '.'; }
+
+  function startWait(now) {
+    phase = 'wait'; phaseStart = now; crashPoint = genCrash(); mult = 1; runT = 0;
+    lastBeep = -1; bets = [nextBets[0], nextBets[1]]; nextBets = [null, null];
+    genBots(); botsDirty = true;
+    el.mult.className = 'mult wait'; el.sub.className = 'sub'; el.sub.textContent = 'Place ta mise avant le départ';
+    [0, 1].forEach(function (i) {
+      if (bets[i]) showResult(i, '', placedText(bets[i]));
+      else showResult(i, '', balance < MIN ? 'Solde épuisé. Utilise « Remettre à 10 000 ».' : 'Place ta mise avant le départ.');
+    });
+  }
+  function startRun(now) {
+    phase = 'run'; runStart = now; runT = 0; mult = 1;
+    el.mult.className = 'mult'; el.bar.style.width = '0%';
+    el.sub.className = 'sub'; el.sub.textContent = (bets[0] || bets[1]) ? 'Encaisse avant le crash' : 'Manche en cours';
+    engineStart(); beep(990, 0.25, 0.07); whoosh();
+  }
+  function cashOut(i, x) {
+    var b = bets[i];
+    if (!b || b.cashed) return;
+    b.cashed = true; b.at = x;
+    var win = Math.floor(b.amount * x);
+    balance += win; save(); renderBalance();
+    stats.rounds++; stats.net += win - b.amount; stats.best = Math.max(stats.best, x);
+    myLog.unshift({ pari: i + 1, amount: b.amount, at: x, win: win });
+    renderStats(); botsDirty = true;
+    showResult(i, 'win', 'Gagné +' + fmtAr(win - b.amount) + ' à ' + fmtX(x));
+    el.sub.className = 'sub win'; el.sub.textContent = 'Encaissé à ' + fmtX(x);
+    chime();
+  }
+  function doCrash(now) {
+    phase = 'crashed'; phaseStart = now; mult = crashPoint; runT = Math.log(crashPoint) / K;
+    el.mult.className = 'mult crash'; el.mult.textContent = fmtX(crashPoint);
+    el.sub.className = 'sub'; el.sub.textContent = 'L\'avion a explosé';
+    spawnExplosion(lastPlane.x, lastPlane.y);
+    engineStop(); boom();
+    el.screen.classList.remove('shake'); void el.screen.offsetWidth; el.screen.classList.add('shake');
+    history.unshift(crashPoint); if (history.length > HIST_MAX) history.pop();
+    renderHist();
+    bets.forEach(function (b, i) {
+      if (b && !b.cashed) {
+        stats.rounds++; stats.net -= b.amount;
+        myLog.unshift({ pari: i + 1, amount: b.amount, at: 0, win: 0 });
+        showResult(i, 'loss', 'Perdu −' + fmtAr(b.amount) + ' · crash à ' + fmtX(crashPoint));
+      }
+    });
+    renderStats();
+    bots.forEach(function (b) { if (b.status === 'play') b.status = 'lose'; });
+    botsDirty = true;
+  }
+
+  function frame(now) {
+    var dt = Math.min(0.05, (now - lastNow) / 1000); lastNow = now;
+    if (phase === 'wait') {
+      var left = WAIT - (now - phaseStart);
+      if (left <= 0) startRun(now);
+      else {
+        el.mult.textContent = 'Décollage ' + (left / 1000).toFixed(1).replace('.', ',') + ' s';
+        var sec = Math.ceil(left / 1000);
+        if (sec <= 3 && sec !== lastBeep) { lastBeep = sec; beep(660, 0.12, 0.06); }
+        el.bar.style.width = (left / WAIT * 100) + '%';
+      }
+    }
+    if (phase === 'run') {
+      runT = (now - runStart) / 1000;
+      var m = Math.exp(K * runT);
+      [0, 1].forEach(function (i) {
+        var b = bets[i];
+        if (b && !b.cashed && b.auto && b.auto <= crashPoint && m >= b.auto) cashOut(i, b.auto);
+      });
+      bots.forEach(function (b) {
+        if (b.status === 'play' && b.target <= crashPoint && m >= b.target) { b.status = 'win'; b.at = b.target; botsDirty = true; }
+      });
+      if (m >= crashPoint) doCrash(now);
+      else {
+        mult = Math.floor(m * 100) / 100;
+        el.mult.textContent = fmtX(mult);
+        engineSet(m);
+        var live = 0;
+        bets.forEach(function (b) { if (b && !b.cashed) live += b.amount * mult - b.amount; });
+        if (bets.some(function (b) { return b && !b.cashed; })) el.sub.textContent = 'Gain actuel +' + fmtAr(live);
+      }
+    } else if (phase === 'crashed') {
+      el.bar.style.width = '0%';
+      if (now - phaseStart >= PAUSE) startWait(now);
+    }
+    if (botsDirty && now - lastTable > 160) { renderTable(); botsDirty = false; lastTable = now; }
+    renderButton(0); renderButton(1);
+    draw(dt, now);
+    requestAnimationFrame(frame);
+  }
+
+  function onGo(i) {
+    ensureAudio();
+    var amt;
+    if (phase === 'wait') {
+      if (bets[i]) { balance += bets[i].amount; bets[i] = null; save(); renderBalance(); showResult(i, '', 'Mise annulée.'); botsDirty = true; }
+      else {
+        amt = readBet(i);
+        if (amt > balance) return;
+        balance -= amt; save(); renderBalance();
+        bets[i] = { amount: amt, auto: el.autoOn[i].checked ? readAuto(i) : null, cashed: false, at: 0 };
+        showResult(i, '', placedText(bets[i])); botsDirty = true; beep(520, 0.06, 0.05);
+      }
+    } else if (phase === 'run' && bets[i] && !bets[i].cashed) {
+      cashOut(i, mult);
+    } else if (!(phase === 'run' && bets[i] && bets[i].cashed)) {
+      if (nextBets[i]) { balance += nextBets[i].amount; nextBets[i] = null; save(); renderBalance(); showResult(i, '', 'Mise annulée.'); }
+      else {
+        amt = readBet(i);
+        if (amt > balance) return;
+        balance -= amt; save(); renderBalance();
+        nextBets[i] = { amount: amt, auto: el.autoOn[i].checked ? readAuto(i) : null, cashed: false, at: 0 };
+        showResult(i, '', 'Mise de ' + fmtAr(amt) + ' pour la prochaine manche.');
+      }
+    }
+    renderButton(i);
+  }
+  [0, 1].forEach(function (i) {
+    el.go[i].addEventListener('click', function () { onGo(i); });
+    el.bet[i].addEventListener('input', function () { renderButton(i); });
+    el.bet[i].addEventListener('change', function () { setBet(i, readBet(i)); });
+    el.auto[i].addEventListener('change', function () { el.auto[i].value = readAuto(i).toFixed(2).replace('.', ','); });
+  });
+  function setBet(i, n) { el.bet[i].value = String(Math.min(MAX, Math.max(MIN, Math.round(n)))); renderButton(i); }
+  document.querySelectorAll('.step').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var i = +b.getAttribute('data-i'), d = +b.getAttribute('data-d');
+      setBet(i, readBet(i) + d * 500);
+    });
+  });
+  document.querySelectorAll('.quick button').forEach(function (b) {
+    b.addEventListener('click', function () { setBet(+b.getAttribute('data-i'), +b.getAttribute('data-v')); });
+  });
+  $('reset').addEventListener('click', function () {
+    var busy = nextBets.some(Boolean) || (phase !== 'crashed' && bets.some(function (b) { return b && !b.cashed; }));
+    if (busy) return;
+    balance = START; save(); renderBalance(); renderButton(0); renderButton(1);
+    showResult(0, '', 'Solde remis à ' + fmtAr(START) + '.'); showResult(1, '', '');
+  });
+
+  genBots();
+  renderBalance(); renderStats(); renderHist(); renderTable(); renderButton(0); renderButton(1);
+  requestAnimationFrame(frame);
+})();
+</script>
+
+</body></html>
